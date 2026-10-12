@@ -1,11 +1,15 @@
-Flask==3.1.2
-Flask-Bootstrap==3.3.7.1
-flask-wtf==1.2.2
-numpy==1.26.4
-Pillow==12.0.0
-torch==2.2.2
-torchvision==0.17.2
-tqdm==4.66.4
-Werkzeug==3.1.4
-WTForms==3.2.1
-gunicorn
+Flask>=2.3,<3
+Flask-WTF>=1.2,<2
+Flask-Bootstrap>=3.3,<4
+WTForms>=3.0,<4
+Werkzeug>=2.3,<3
+Pillow>=10.0
+gunicorn>=21.2
+
+# CPU-only PyTorch build. Without --extra-index-url, pip grabs the default wheel, which
+# bundles ~1.5-2GB of unused CUDA/GPU libraries -- Render's free tier has no GPU, so that
+# bloat does nothing but eat RAM and disk and slow the build down. This line points pip at
+# PyTorch's own CPU-only wheels instead, which are a fraction of the size.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0
+torchvision>=0.15

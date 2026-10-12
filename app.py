@@ -2,6 +2,11 @@ import os
 import shutil
 import time
 import torch
+# A free hosting tier's CPU is usually a small fractional slice (not a full core), and by
+# default PyTorch spins up one thread per CPU it *thinks* it has, which thrashes and uses
+# more memory/time than it saves on a host like that. Pinning to 1 thread, before anything
+# else touches torch, keeps this fast and light on a constrained host. Harmless locally too.
+torch.set_num_threads(1)
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, abort
 from flask_wtf import FlaskForm
