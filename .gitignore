@@ -1,0 +1,36 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.venv/
+*.egg-info/
+
+# --- Trained model weights ---
+# These are large binary files (tens of MB) that don't belong in git history.
+# GitHub will warn/reject files over 50-100MB, and every clone would otherwise
+# re-download them forever. Host them separately (GitHub Releases, Drive, HF Hub)
+# and link to them from the README instead.
+*.pth
+*.pt
+*.ckpt
+
+# --- Runtime-generated content ---
+# User uploads and generated stylizations should never be committed.
+static/uploads/*
+!static/uploads/.gitkeep
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Env / secrets ---
+.env
+*.env
+pip_repair_env/
+pip_repair_extract/
+pip_wheel_temp/
+*.whl
