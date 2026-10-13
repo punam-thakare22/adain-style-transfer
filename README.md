@@ -2,6 +2,12 @@
 
 A Flask web app that repaints any photo in the style of a chosen artwork in real time, using **Adaptive Instance Normalization (AdaIN)** — [Huang & Belongie, ICCV 2017](https://arxiv.org/abs/1703.06868).
 
+### Demo
+
+<video src="ADN_Output.mp4" controls width="100%">
+  Your browser doesn't support inline video — <a href="ADN_Output.mp4">download/view it directly</a>.
+</video>
+
 ![AdaIN Studio hero](docs/screenshot-hero.png)
 
 ## How it works
@@ -10,7 +16,7 @@ A Flask web app that repaints any photo in the style of a chosen artwork in real
 2. **AdaIN** aligns the content features' channel-wise mean/variance to the style features' — a single, parameter-free statistics swap that transfers style without a slow optimization loop.
 3. A compact, trained **decoder** network inverts those features back into an image.
 
-The whole pipeline is a single forward pass and is fully convolutional, so it runs at any input resolution (256 / 512 / 1024px, selectable in the UI).
+The whole pipeline is a single forward pass and is fully convolutional, so it runs at any input resolution (256 / 512px, selectable in the UI).
 
 ![Result view](docs/screenshot-result.png)
 
@@ -57,14 +63,20 @@ pip install -r requirements.txt
 
 ### Model weights (required, not included in this repo)
 
-Trained model weights are binary files tens of megabytes in size and are **not committed to git** (see `.gitignore`). You need to place two files yourself before the app will start:
+Trained model weights are binary files tens of megabytes in size and are **not committed to git** (see `.gitignore`). You need these two files in place before the app will start:
 
 | File | Location |
 |---|---|
 | `vgg_normalised.pth` | project root |
 | `decoder_final.pth` | `experiment/final_exp/` |
 
-If you trained your own decoder with `train.py`, point it at your dataset and it will produce `decoder_final.pth`. Otherwise, host your existing weight files somewhere (GitHub Releases, Google Drive, Hugging Face Hub) and download them into the paths above.
+Run this once after cloning to fetch them automatically:
+```bash
+python download_weights.py
+```
+(The URLs are already filled in at the top of that file, pointing to this repo's GitHub Release.) If it reports a file as `SKIPPED`, or you'd rather do it by hand, download `vgg_normalised.pth` and `decoder_final.pth` from this repo's **Releases** page and place them at the paths above yourself.
+
+If you're forking this to train your own style transfer model instead, run `train.py` against your own dataset to produce `decoder_final.pth`, then edit the URLs at the top of `download_weights.py` to point at wherever you host your own weights.
 
 ### Run
 
@@ -83,9 +95,23 @@ FLASK_DEBUG=1 python app.py
 
 **Do not set `FLASK_DEBUG=1` on a publicly hosted deployment** — the Werkzeug interactive debugger allows arbitrary code execution if it's reachable from the internet.
 
-### Deploying
+### Deploying on Render
 
-The app reads `HOST`, `PORT`, `SECRET_KEY` and `FLASK_DEBUG` from the environment, so it runs unchanged on hosts like Render/Railway/Fly.io that assign their own port. Set a real `SECRET_KEY` in that environment for any public deployment.
+1. Push this repo to GitHub (see below), then on Render: **New → Web Service**, connect the repo.
+2. **Build Command:**
+   ```
+   pip install -r requirements.txt && python download_weights.py
+   ```
+   Your `.pth` weight files aren't in git (see above), so they have to be fetched during the build. The URLs are already filled in at the top of `download_weights.py` (pointing at this repo's GitHub Release) — Render will pick them up automatically. If you ever change where the weights are hosted, either edit those URLs directly or set `VGG_WEIGHTS_URL` / `DECODER_WEIGHTS_URL` as environment variables in Render's dashboard, which override the values in the file.
+3. **Start Command:**
+   ```
+   gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120
+   ```
+   (Render also auto-detects this from the included `Procfile`, so you can usually leave the Start Command blank.) `app.run()`'s built-in dev server is not meant for production — Render runs your app through gunicorn instead.
+4. Add an environment variable `SECRET_KEY` set to any long random string (don't reuse a value from this README).
+5. **Heads up on free-tier RAM:** Render's free web service plan has 512MB RAM, which can be too little for PyTorch plus a VGG-19 forward pass together — app.py caps input images and output resolution (256/512px only) to reduce peak memory use, but if the service still crashes/restarts under load, the paid "Starter" tier (more RAM) is the reliable fix. See the demo video above for the app running without that constraint.
+
+The app itself reads `HOST`, `PORT`, `SECRET_KEY` and `FLASK_DEBUG` from the environment, so none of this requires code changes — Render just needs to be told to set them.
 
 ## Credits
 
